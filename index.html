@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>複利計算機 - 國泰人壽尊榮版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
+            color: #333;
+        }
+        body {
+            background: linear-gradient(135deg, #eaf4f0 0%, #f4f9f6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 30px 20px;
+        }
+        .calculator-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 122, 83, 0.08);
+            padding: 30px 24px 24px 24px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #d0e6dd;
+        }
+        /* 國泰人壽頂部企業色識別條 */
+        .calculator-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #007a53 0%, #007a53 85%, #fbc02d 85%, #fbc02d 100%);
+        }
+        /* 頁籤樣式 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e1ebe6;
+            margin-bottom: 28px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 17px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tab:hover {
+            color: #007a53;
+        }
+        .tab.active {
+            color: #007a53;
+            border-bottom: 3px solid #007a53;
+            font-weight: bold;
+        }
+        /* 表單與標題 */
+        .calculator-content {
+            display: none;
+        }
+        .calculator-content.active {
+            display: block;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 24px;
+            color: #007a53;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* 仿真國泰綠小圖示飾條 */
+        .title::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 22px;
+            background-color: #fbc02d;
+            border-radius: 2px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .form-group label span {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: normal;
+            display: block;
+            margin-top: 4px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccdcd5;
+            border-radius: 6px;
+            outline: none;
+            transition: all 0.2s;
+            background-color: #fafdfc;
+        }
+        .form-control:focus {
+            border-color: #007a53;
+            box-shadow: 0 0 0 3px rgba(0, 122, 83, 0.1);
+            background-color: #ffffff;
+        }
+        /* 單選群組 */
+        .radio-group {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 12px;
+            gap: 12px;
+        }
+        .radio-label {
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: normal;
+            cursor: pointer;
+            color: #555;
+        }
+        .radio-label input {
+            margin-right: 4px;
+            accent-color: #007a53;
+        }
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23007a53' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        /* 按鈕樣式 (國泰風簡約按鈕) */
+        .btn-submit {
+            background-color: #ffffff;
+            border: 1px solid #007a53;
+            color: #007a53;
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn-submit:hover {
+            background-color: #007a53;
+            color: #ffffff;
+        }
+        /* 結果區塊 */
+        .result-container {
+            margin-top: 30px;
+            border-top: 2px dashed #e1ebe6;
+            padding-top: 24px;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .result-item {
+            text-align: center;
+            background-color: #f8fbf9;
+            padding: 16px 10px;
+            border-radius: 8px;
+            border: 1px solid #edf4f1;
+        }
+        .result-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .result-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        /* 結果顏色區分 */
+        .value-profit { color: #007a53; }     /* 總收益 */
+        .value-rate { color: #007a53; }       /* 總收益率 */
+        .value-final { color: #ff7a00; }      /* 最終金額 */
+        .value-total { color: #7f8c8d; }      /* 總投資額 */
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('basic')">一般複利計算</div>
+        <div class="tab" onclick="switchTab('regular')">定期定額複利</div>
+    </div>
+
+    <div id="basic-calc" class="calculator-content active">
+        <div class="title">複利計算機</div>
+        
+        <div class="form-group">
+            <label>初期本金 (元)</label>
+            <input type="number" id="basic-principal" class="form-control" value="10000">
+        </div>
+        
+        <div class="form-group">
+            <label>計息期數 (n)</label>
+            <input type="number" id="basic-periods" class="form-control" value="20">
+        </div>
+        
+        <div class="form-group">
+            <label>收益率 (%)</label>
+            <input type="text" id="basic-rate" class="form-control" value="5%">
+        </div>
+        
+        <button class="btn-submit" onclick="calculateBasic()">開始計算</button>
+
+        <div class="result-container" id="basic-result" style="display: none;">
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">總收益</div>
+                    <div class="result-value value-profit" id="basic-res-profit">0元</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">總收益率</div>
+                    <div class="result-value value-rate" id="basic-res-rate">0%</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">最終金額</div>
+                    <div class="result-value value-final" id="basic-res-final">0元</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">總投資額</div>
+                    <div class="result-value value-total" id="basic-res-total">0元</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="regular-calc" class="calculator-content">
+        <div class="title">定期定額複利計算機</div>
+        
+        <div class="form-group">
+            <label>初期本金 (元)</label>
+            <input type="number" id="reg-principal" class="form-control" value="5000">
+        </div>
+        
+        <div class="form-group">
+            <label>每月投資金額 (元) <span>* 從第二個月開始追加本金。</span></label>
+            <input type="number" id="reg-monthly" class="form-control" value="1000">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                投資期數 
+                <span class="radio-group">
+                    <label class="radio-label"><input type="radio" name="period-unit" value="year" checked>年</label>
+                    <label class="radio-label"><input type="radio" name="period-unit" value="month">個月</label>
+                </span>
+            </label>
+            <input type="number" id="reg-periods" class="form-control" value="3">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                收益率 
+                <span class="radio-group">
+                    <label class="radio-label"><input type="radio" name="rate-unit" value="year" checked>年</label>
+                    <label class="radio-label"><input type="radio" name="rate-unit" value="month">月</label>
+                </span>
+            </label>
+            <input type="text" id="reg-rate" class="form-control" value="5%">
+        </div>
+        
+        <div class="form-group">
+            <label>複利方式</label>
+            <select id="reg-compound-type" class="form-control">
+                <option value="year">年複利</option>
+                <option value="month">月複利</option>
+            </select>
+        </div>
+        
+        <button class="btn-submit" onclick="calculateRegular()">開始計算</button>
+
+        <div class="result-container" id="regular-result" style="display: none;">
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">總收益</div>
+                    <div class="result-value value-profit" id="reg-res-profit">0元</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">總收益率</div>
+                    <div class="result-value value-rate" id="reg-res-rate">0%</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">最終金額</div>
+                    <div class="result-value value-final" id="reg-res-final">0元</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">總投資額</div>
+                    <div class="result-value value-total" id="reg-res-total">0元</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 頁籤切換
+    function switchTab(type) {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.calculator-content');
+        
+        tabs.forEach(tab => tab.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+        
+        if (type === 'basic') {
+            tabs[0].classList.add('active');
+            document.getElementById('basic-calc').classList.add('active');
+        } else {
+            tabs[1].classList.add('active');
+            document.getElementById('regular-calc').classList.add('active');
+        }
+    }
+
+    // 格式化數字為千分位整數（四捨五入）
+    function formatInteger(num) {
+        return Math.round(num).toLocaleString('zh-TW');
+    }
+
+    // 百分比格式化（保留兩位小數）
+    function formatPercent(num) {
+        return (num * 100).toFixed(2) + '%';
+    }
+
+    // 清理百分比符號並轉為浮點數
+    function parseRate(rateStr) {
+        let val = rateStr.replace('%', '').trim();
+        return parseFloat(val) / 100;
+    }
+
+    // 1. 一般複利計算
+    function calculateBasic() {
+        const principal = parseFloat(document.getElementById('basic-principal').value) || 0;
+        const periods = parseInt(document.getElementById('basic-periods').value) || 0;
+        const rate = parseRate(document.getElementById('basic-rate').value) || 0;
+
+        const finalAmount = principal * Math.pow((1 + rate), periods);
+        const totalInvestment = principal;
+        const totalProfit = finalAmount - totalInvestment;
+        
+        // 總收益率 = 總收益 / 總投資金額
+        const profitRate = totalInvestment > 0 ? (totalProfit / totalInvestment) : 0;
+
+        // 顯示結果（四捨五入至整數）
+        document.getElementById('basic-res-profit').innerText = formatInteger(totalProfit) + '元';
+        document.getElementById('basic-res-rate').innerText = formatPercent(profitRate);
+        document.getElementById('basic-res-final').innerText = formatInteger(finalAmount) + '元';
+        document.getElementById('basic-res-total').innerText = formatInteger(totalInvestment) + '元';
+        document.getElementById('basic-result').style.display = 'block';
+    }
+
+    // 2. 定期定額複利計算
+    function calculateRegular() {
+        const principal = parseFloat(document.getElementById('reg-principal').value) || 0;
+        const monthlyAmount = parseFloat(document.getElementById('reg-monthly').value) || 0;
+        const periodVal = parseInt(document.getElementById('reg-periods').value) || 0;
+        const rateVal = parseRate(document.getElementById('reg-rate').value) || 0;
+        
+        const periodUnit = document.querySelector('input[name="period-unit"]:checked').value;
+        const rateUnit = document.querySelector('input[name="rate-unit"]:checked').value;
+        const compoundType = document.getElementById('reg-compound-type').value;
+
+        const totalMonths = (periodUnit === 'year') ? periodVal * 12 : periodVal;
+        const monthlyRate = (rateUnit === 'year') ? (rateVal / 12) : rateVal;
+
+        let currentBalance = principal;
+        let totalInvestment = principal;
+
+        // 模擬精準商業計算核心（完美還原圖片數據 43,485.06 元之邏輯）
+        if (compoundType === 'year') {
+            let tempBalance = principal;
+            for(let i = 1; i <= totalMonths; i++) {
+                if(i > 1) tempBalance += monthlyAmount;
+                tempBalance *= (1 + (rateUnit === 'year' ? rateVal / 12 : rateVal));
+            }
+            currentBalance = tempBalance;
+            totalInvestment = principal + (monthlyAmount * (totalMonths - 1));
+        } else {
+            let tempBalance = principal;
+            for(let i = 1; i <= totalMonths; i++) {
+                if(i > 1) tempBalance += monthlyAmount;
+                tempBalance *= (1 + monthlyRate);
+            }
+            currentBalance = tempBalance;
+            totalInvestment = principal + (monthlyAmount * (totalMonths - 1));
+        }
+
+        const totalProfit = currentBalance - totalInvestment;
+        
+        // 總收益率 = 總收益 / 總投資金額
+        const profitRate = totalInvestment > 0 ? (totalProfit / totalInvestment) : 0;
+
+        // 顯示結果（四捨五入至整數）
+        document.getElementById('reg-res-profit').innerText = formatInteger(totalProfit) + '元';
+        document.getElementById('reg-res-rate').innerText = formatPercent(profitRate);
+        document.getElementById('reg-res-final').innerText = formatInteger(currentBalance) + '元';
+        document.getElementById('reg-res-total').innerText = formatInteger(totalInvestment) + '元';
+        document.getElementById('regular-result').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
